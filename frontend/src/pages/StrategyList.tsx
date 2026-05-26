@@ -13,94 +13,99 @@ import {
   message,
   Row,
   Col,
+  Popconfirm,
+  Tooltip,
 } from "antd";
 import {
   RocketOutlined,
-  EyeOutlined,
   ReloadOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  ExperimentOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { api, type Strategy, type BacktestResult, type BacktestParams } from "../api/client";
+import { api, type Strategy, type StrategyCreate } from "../api/client";
 import type { ColumnsType } from "antd/es/table";
 
 const { Title, Text } = Typography;
 
 const strategyTypeColors: Record<string, string> = {
   momentum: "blue",
+  momentum_breakout: "cyan",
   mean_reversion: "green",
-  factor_scoring: "purple",
+  pairs_mean_reversion: "lime",
+  factor_score: "purple",
+  macd: "orange",
+  macd_histogram: "gold",
+  bollinger_breakout: "magenta",
+  bollinger_squeeze: "volcano",
+  kdj: "geekblue",
+  kdj_reversal: "default",
+  turtle: "red",
+  turtle_system2: "gold",
+  dual_ma: "blue",
+  triple_ma: "green",
 };
-
-const strategyTypeOptions = [
-  { label: "全部类型", value: "" },
-  { label: "动量策略", value: "momentum" },
-  { label: "均值回归", value: "mean_reversion" },
-  { label: "因子打分", value: "factor_scoring" },
-];
 
 export default function StrategyList() {
   const navigate = useNavigate();
   const [strategies, setStrategies] = useState<Strategy[]>([]);
-  const [backtests, setBacktests] = useState<BacktestResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string>("");
-  const [modalOpen, setModalOpen] = useState(false);
+  const [backtestModalOpen, setBacktestModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
   const [running, setRunning] = useState(false);
-  const [form] = Form.useForm();
+  const [backtestForm] = Form.useForm();
+  const [editForm] = Form.useForm();
+  const [createForm] = Form.useForm();
 
-  const fetchData = useCallback(async () => {
+  const fetchStrategies = useCallback(async () => {
     setLoading(true);
     try {
-      const [sRes, bRes] = await Promise.all([
-        api.getStrategies(),
-        api.getBacktestList(),
-      ]);
-      setStrategies(sRes);
-      setBacktests(bRes);
+      const data = await api.getStrategies(typeFilter || undefined);
+      setStrategies(data);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [typeFilter]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const filteredStrategies = typeFilter
-    ? strategies.filter((s) => s.strategy_type === typeFilter)
-    : strategies;
+    fetchStrategies();
+  }, [fetchStrategies]);
 
   const handleRunBacktest = (strategy: Strategy) => {
     setSelectedStrategy(strategy);
-    form.setFieldsValue({
-      start_date: "2024-01-01",
-      end_date: "2025-12-31",
-      ...strategy.params,
+    backtestForm.setFieldsValue({
+      symbols: "000001",
+      start_date: "2020-01-01",
+      end_date: "2025-05-01",
     });
-    setModalOpen(true);
+    setBacktestModalOpen(true);
   };
 
   const handleSubmitBacktest = async () => {
     if (!selectedStrategy) return;
     try {
-      const values = await form.validateFields();
+      const values = await backtestForm.validateFields();
       setRunning(true);
+      const symbols = (values.symbols as string)
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter(Boolean);
 
-      const { start_date, end_date, symbols, ...restParams } = values;
-      const params: BacktestParams = {
+      const result = await api.runBacktest({
         strategy_id: selectedStrategy.id,
-        start_date: start_date ?? "2024-01-01",
-        end_date: end_date ?? "2025-12-31",
-        symbols: symbols
-          ? (symbols as string).split(",").map((s: string) => s.trim())
-          : undefined,
-      };
-
-      const result = await api.runBacktest(params);
-      message.success(`回测完成！ID: ${result.id}`);
-      setModalOpen(false);
-      fetchData();
+        symbols,
+        start_date: values.start_date,
+        end_date: values.end_date,
+        initial_capital: values.initial_capital || 1_000_000,
+      });
+      message.success(`回测完成！年化收益: ${(result.annualized_return * 100).toFixed(2)}%`);
+      setBacktestModalOpen(false);
+      fetchStrategies();
       navigate(`/backtest/${result.id}`);
     } catch (err) {
       if (err !== false) message.error("回测失败，请检查参数");
@@ -109,7 +114,85 @@ export default function StrategyList() {
     }
   };
 
-  const strategyColumns: ColumnsType<Strategy> = [
+  const handleEdit = (strategy: Strategy) => {
+    setSelectedStrategy(strategy);
+    editForm.setFieldsValue({
+      name: strategy.name,
+      description: strategy.description,
+      params: JSON.stringify(strategy.params, null, 2),
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!selectedStrategy) return;
+    try {
+      const values = await editForm.validateFields();
+      let params = {};
+      try {
+        params = JSON.parse(values.params);
+      } catch {
+        message.error("参数格式错误，请输入合法 JSON");
+        return;
+      }
+      await api.updateStrategy(selectedStrategy.id, {
+        name: values.name,
+        description: values.description,
+        params,
+      });
+      message.success("策略已更新");
+      setEditModalOpen(false);
+      fetchStrategies();
+    } catch (err) {
+      if (err !== false) message.error("更新失败");
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    await api.deleteStrategy(id);
+    message.success("已删除");
+    fetchStrategies();
+  };
+
+  const handleCreate = async () => {
+    try {
+      const values = await createForm.validateFields();
+      let params = {};
+      if (values.params) {
+        try {
+          params = JSON.parse(values.params);
+        } catch {
+          message.error("参数格式错误，请输入合法 JSON");
+          return;
+        }
+      }
+      const req: StrategyCreate = {
+        name: values.name,
+        strategy_type: values.strategy_type,
+        description: values.description || "",
+        params,
+      };
+      await api.createStrategy(req);
+      message.success("策略已创建");
+      setCreateModalOpen(false);
+      createForm.resetFields();
+      fetchStrategies();
+    } catch (err) {
+      if (err !== false) message.error("创建失败");
+    }
+  };
+
+  const handleSeedDefaults = async () => {
+    try {
+      const result = await api.seedDefaults();
+      message.success(`已初始化 ${result.created.length} 个默认策略`);
+      fetchStrategies();
+    } catch {
+      message.error("初始化失败");
+    }
+  };
+
+  const columns: ColumnsType<Strategy> = [
     {
       title: "策略名称",
       dataIndex: "name",
@@ -121,8 +204,8 @@ export default function StrategyList() {
       dataIndex: "strategy_type",
       key: "strategy_type",
       render: (type: string) => (
-        <Tag color={strategyTypeColors[type]}>
-          {strategyTypeOptions.find((o) => o.value === type)?.label ?? type}
+        <Tag color={strategyTypeColors[type] || "default"}>
+          {type}
         </Tag>
       ),
     },
@@ -131,6 +214,7 @@ export default function StrategyList() {
       dataIndex: "description",
       key: "description",
       ellipsis: true,
+      width: 200,
     },
     {
       title: "参数",
@@ -147,67 +231,56 @@ export default function StrategyList() {
       ),
     },
     {
+      title: "回测次数",
+      dataIndex: "backtest_count",
+      key: "backtest_count",
+      width: 80,
+      render: (v: number) => v || 0,
+    },
+    {
+      title: "最近年化",
+      dataIndex: "last_annual_return",
+      key: "last_annual_return",
+      width: 90,
+      render: (v: number | null) =>
+        v != null ? (
+          <Text style={{ color: v >= 0 ? "#3f8600" : "#cf1322" }}>
+            {(v * 100).toFixed(1)}%
+          </Text>
+        ) : (
+          <Text type="secondary">-</Text>
+        ),
+    },
+    {
       title: "操作",
       key: "action",
+      width: 280,
       render: (_, record) => (
         <Space>
-          <Button
-            type="primary"
-            size="small"
-            icon={<RocketOutlined />}
-            onClick={() => handleRunBacktest(record)}
+          <Tooltip title="运行回测">
+            <Button
+              type="primary"
+              size="small"
+              icon={<RocketOutlined />}
+              onClick={() => handleRunBacktest(record)}
+            >
+              回测
+            </Button>
+          </Tooltip>
+          <Tooltip title="编辑参数">
+            <Button
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+            />
+          </Tooltip>
+          <Popconfirm
+            title="确定删除此策略？"
+            onConfirm={() => handleDelete(record.id)}
           >
-            运行回测
-          </Button>
+            <Button size="small" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
         </Space>
-      ),
-    },
-  ];
-
-  const backtestColumns: ColumnsType<BacktestResult> = [
-    {
-      title: "策略ID",
-      dataIndex: "strategy_id",
-      key: "strategy_id",
-      width: 150,
-    },
-    {
-      title: "年化收益",
-      dataIndex: "annualized_return",
-      key: "annualized_return",
-      render: (v: number) => (
-        <Text style={{ color: (v ?? 0) >= 0 ? "#3f8600" : "#cf1322" }}>
-          {(v ?? 0).toFixed(2)}%
-        </Text>
-      ),
-      sorter: (a, b) => (a.annualized_return ?? 0) - (b.annualized_return ?? 0),
-    },
-    {
-      title: "夏普比",
-      dataIndex: "sharpe_ratio",
-      key: "sharpe_ratio",
-      render: (v: number) => (v ?? 0).toFixed(2),
-      sorter: (a, b) => (a.sharpe_ratio ?? 0) - (b.sharpe_ratio ?? 0),
-    },
-    {
-      title: "最大回撤",
-      dataIndex: "max_drawdown",
-      key: "max_drawdown",
-      render: (v: number) => (
-        <Text style={{ color: "#cf1322" }}>{(v ?? 0).toFixed(2)}%</Text>
-      ),
-    },
-    {
-      title: "操作",
-      key: "action",
-      render: (_, record) => (
-        <Button
-          size="small"
-          icon={<EyeOutlined />}
-          onClick={() => navigate(`/backtest/${record.id}`)}
-        >
-          详情
-        </Button>
       ),
     },
   ];
@@ -223,99 +296,135 @@ export default function StrategyList() {
         }}
       >
         <Title level={2} style={{ margin: 0 }}>
-          策略列表
+          策略管理
         </Title>
         <Space>
           <Select
             value={typeFilter}
             onChange={setTypeFilter}
-            options={strategyTypeOptions}
-            style={{ width: 150 }}
+            style={{ width: 160 }}
             placeholder="筛选类型"
+            allowClear
+            options={[
+              { label: "全部类型", value: "" },
+              ...Object.entries(strategyTypeColors).map(([k]) => ({
+                label: k,
+                value: k,
+              })),
+            ]}
           />
-          <Button icon={<ReloadOutlined />} onClick={fetchData}>
+          <Button icon={<PlusOutlined />} type="primary" onClick={() => setCreateModalOpen(true)}>
+            新建策略
+          </Button>
+          <Button icon={<ExperimentOutlined />} onClick={handleSeedDefaults}>
+            初始化默认策略
+          </Button>
+          <Button icon={<ReloadOutlined />} onClick={fetchStrategies}>
             刷新
           </Button>
         </Space>
       </div>
 
-      {/* Strategy Table */}
       <Table
-        columns={strategyColumns}
-        dataSource={filteredStrategies}
+        columns={columns}
+        dataSource={strategies}
         rowKey="id"
         loading={loading}
-        pagination={false}
-        style={{ marginBottom: 32 }}
-      />
-
-      {/* Backtest History */}
-      <Title level={4} style={{ marginBottom: 16 }}>
-        回测历史
-      </Title>
-      <Table
-        columns={backtestColumns}
-        dataSource={backtests}
-        rowKey="id"
-        loading={loading}
-        pagination={{ pageSize: 10 }}
+        pagination={{ pageSize: 20 }}
       />
 
       {/* Run Backtest Modal */}
       <Modal
         title={`运行回测 — ${selectedStrategy?.name ?? ""}`}
-        open={modalOpen}
+        open={backtestModalOpen}
         onOk={handleSubmitBacktest}
-        onCancel={() => setModalOpen(false)}
+        onCancel={() => setBacktestModalOpen(false)}
         confirmLoading={running}
         okText="开始回测"
         cancelText="取消"
-        width={600}
+        width={500}
       >
-        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
+        <Form form={backtestForm} layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item
+            label="股票代码（逗号分隔）"
+            name="symbols"
+            rules={[{ required: true, message: "请输入股票代码" }]}
+          >
+            <Input placeholder="000001,600519,000858" />
+          </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                label="开始日期"
-                name="start_date"
-                rules={[{ required: true, message: "请输入开始日期" }]}
-              >
-                <Input placeholder="2024-01-01" />
+              <Form.Item label="开始日期" name="start_date" rules={[{ required: true }]}>
+                <Input placeholder="2020-01-01" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item
-                label="结束日期"
-                name="end_date"
-                rules={[{ required: true, message: "请输入结束日期" }]}
-              >
-                <Input placeholder="2025-12-31" />
+              <Form.Item label="结束日期" name="end_date" rules={[{ required: true }]}>
+                <Input placeholder="2025-05-01" />
               </Form.Item>
             </Col>
           </Row>
-
-          <Form.Item label="股票代码（可选）" name="symbols">
-            <Input placeholder="多个用逗号分隔，如 000001,600519" />
+          <Form.Item label="初始资金" name="initial_capital">
+            <InputNumber style={{ width: "100%" }} min={10000} step={100000} />
           </Form.Item>
+        </Form>
+      </Modal>
 
-          {selectedStrategy && (
-            <>
-              <Title level={5} style={{ marginBottom: 8 }}>
-                策略参数
-              </Title>
-              {Object.entries(selectedStrategy.params).map(([key, defaultVal]) => (
-                <Form.Item key={key} label={key} name={key}>
-                  {typeof defaultVal === "number" ? (
-                    <InputNumber style={{ width: "100%" }} />
-                  ) : Array.isArray(defaultVal) ? (
-                    <Input placeholder={JSON.stringify(defaultVal)} />
-                  ) : (
-                    <Input />
-                  )}
-                </Form.Item>
-              ))}
-            </>
-          )}
+      {/* Create Strategy Modal */}
+      <Modal
+        title="新建策略"
+        open={createModalOpen}
+        onOk={handleCreate}
+        onCancel={() => setCreateModalOpen(false)}
+        okText="创建"
+        cancelText="取消"
+        width={600}
+      >
+        <Form form={createForm} layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item label="策略名称" name="name" rules={[{ required: true }]}>
+            <Input placeholder="我的策略" />
+          </Form.Item>
+          <Form.Item label="策略类型" name="strategy_type" rules={[{ required: true }]}>
+            <Select
+              placeholder="选择策略类型"
+              options={Object.entries(strategyTypeColors).map(([k]) => ({
+                label: k,
+                value: k,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item label="描述" name="description">
+            <Input.TextArea rows={2} />
+          </Form.Item>
+          <Form.Item label="参数（JSON）" name="params">
+            <Input.TextArea
+              rows={4}
+              placeholder='{"ma_window": 20, "min_holding": 10}'
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Edit Strategy Modal */}
+      <Modal
+        title={`编辑策略 — ${selectedStrategy?.name ?? ""}`}
+        open={editModalOpen}
+        onOk={handleUpdate}
+        onCancel={() => setEditModalOpen(false)}
+        okText="保存"
+        cancelText="取消"
+        width={600}
+      >
+        <Form form={editForm} layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item label="策略名称" name="name">
+            <Input />
+          </Form.Item>
+          <Form.Item label="描述" name="description">
+            <Input.TextArea rows={2} />
+          </Form.Item>
+          <Form.Item label="参数（JSON）" name="params">
+            <Input.TextArea rows={6} />
+          </Form.Item>
         </Form>
       </Modal>
     </div>
