@@ -15,7 +15,11 @@ app = FastAPI(title="Stock Strategy Platform", version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://47.97.26.218:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://47.97.26.218:5173",
+        "https://rogeroger-yu.github.io",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
