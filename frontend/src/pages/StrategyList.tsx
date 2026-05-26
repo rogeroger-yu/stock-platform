@@ -11,10 +11,8 @@ import {
   Select,
   InputNumber,
   message,
-  Card,
   Row,
   Col,
-  Statistic,
 } from "antd";
 import {
   RocketOutlined,

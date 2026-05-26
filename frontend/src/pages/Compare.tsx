@@ -7,7 +7,6 @@ import {
   Select,
   Button,
   Table,
-  Tag,
   Empty,
   Space,
   Statistic,
@@ -25,7 +24,6 @@ import {
   Legend,
   BarChart,
   Bar,
-  Cell,
 } from "recharts";
 import { api, type BacktestResult } from "../api/client";
 import type { ColumnsType } from "antd/es/table";

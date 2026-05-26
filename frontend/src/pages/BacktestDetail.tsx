@@ -12,7 +12,6 @@ import {
   Table,
   Button,
   Empty,
-  Divider,
 } from "antd";
 import {
   ArrowLeftOutlined,
