@@ -47,9 +47,9 @@ export default function Home() {
       </Title>
       <Row gutter={[16, 16]}>
         {strategies.map((s) => {
-          const meta = strategyTypeLabels[s.type] ?? {
+          const meta = strategyTypeLabels[s.strategy_type] ?? {
             color: "default",
-            label: s.type,
+            label: s.strategy_type,
           };
           return (
             <Col xs={24} sm={12} lg={8} key={s.id}>
@@ -151,7 +151,7 @@ export default function Home() {
                       <Col span={12}>
                         <Statistic
                           title="年化收益"
-                          value={bt.annualized_return}
+                          value={bt.annualized_return ?? 0}
                           suffix="%"
                           valueStyle={{
                             fontSize: 16,
@@ -162,7 +162,7 @@ export default function Home() {
                       <Col span={12}>
                         <Statistic
                           title="夏普比"
-                          value={bt.sharpe}
+                          value={bt.sharpe_ratio ?? 0}
                           valueStyle={{ fontSize: 16 }}
                         />
                       </Col>

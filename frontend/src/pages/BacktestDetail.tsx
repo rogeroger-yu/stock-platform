@@ -97,19 +97,18 @@ export default function BacktestDetail() {
   }
 
   // Prepare monthly returns heatmap data
-  const monthlyHeatmapData = result.monthly_returns.map((m) => ({
+  const monthlyHeatmapData = (result.monthly_returns ?? []).map((m: any) => ({
     ...m,
     label: `${m.year}-${String(m.month).padStart(2, "0")}`,
   }));
 
-  // Yearly returns bar chart data
-  const yearlyBarData = result.yearly_returns.map((y) => ({
+  const yearlyBarData = (result.yearly_returns ?? []).map((y: any) => ({
     year: String(y.year),
     return: y.return,
   }));
 
   // Mock trades
-  const trades = generateMockTrades(result.num_trades);
+  const trades = generateMockTrades(result.total_trades);
 
   const tradeColumns: ColumnsType<TradeRecord> = [
     { title: "日期", dataIndex: "date", key: "date" },
@@ -161,20 +160,14 @@ export default function BacktestDetail() {
           返回
         </Button>
         <Title level={2} style={{ margin: 0 }}>
-          {result.strategy_name}
+          {result.strategy_id}
         </Title>
         <Descriptions size="small" style={{ marginTop: 8 }}>
-          <Descriptions.Item label="回测 ID">{result.id}</Descriptions.Item>
-          <Descriptions.Item label="日期范围">
-            {result.start_date} ~ {result.end_date}
+          <Descriptions.Item label="策略 ID">{result.strategy_id}</Descriptions.Item>
+          <Descriptions.Item label="总交易次数">
+            {result.total_trades}
           </Descriptions.Item>
-          <Descriptions.Item label="策略参数">
-            {Object.entries(result.strategy_params).map(([k, v]) => (
-              <Tag key={k}>
-                {k}: {String(v)}
-              </Tag>
-            ))}
-          </Descriptions.Item>
+
         </Descriptions>
       </div>
 
@@ -209,8 +202,8 @@ export default function BacktestDetail() {
           <Card size="small">
             <Statistic
               title="夏普比"
-              value={result.sharpe}
-              valueStyle={{ color: result.sharpe >= 1 ? "#3f8600" : "#faad14" }}
+              value={result.sharpe_ratio ?? 0}
+              valueStyle={{ color: (result.sharpe_ratio ?? 0) >= 1 ? "#3f8600" : "#faad14" }}
             />
           </Card>
         </Col>
@@ -236,7 +229,7 @@ export default function BacktestDetail() {
         </Col>
         <Col xs={12} sm={8} lg={4}>
           <Card size="small">
-            <Statistic title="交易次数" value={result.num_trades} />
+            <Statistic title="交易次数" value={result.total_trades} />
           </Card>
         </Col>
       </Row>

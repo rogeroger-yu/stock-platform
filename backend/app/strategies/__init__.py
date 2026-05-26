@@ -1,7 +1,9 @@
-"""Strategy implementations."""
+"""Strategy implementations.
 
-from app.strategies.momentum import MomentumStrategy
-from app.strategies.mean_reversion import MeanReversionStrategy
-from app.strategies.factor_score import FactorScoreStrategy
+Each strategy module exports one or more StrategyBase subclasses.
+The registry module maps type keys to classes.
+"""
 
-__all__ = ["MomentumStrategy", "MeanReversionStrategy", "FactorScoreStrategy"]
+from app.strategies.registry import get_strategy_class, list_strategy_types
+
+__all__ = ["get_strategy_class", "list_strategy_types"]

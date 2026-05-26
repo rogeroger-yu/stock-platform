@@ -1,11 +1,16 @@
+"""Database engine — SQLite with SQLAlchemy."""
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from .config import settings, get_database_url
 
-DATABASE_URL = get_database_url()
+from app.config import settings
 
+engine = create_engine(
+    settings.database_url,
+    connect_args={"check_same_thread": False},
+    echo=False,
+)
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -14,7 +19,7 @@ class Base(DeclarativeBase):
 
 
 def get_db():
-    """FastAPI dependency for DB sessions."""
+    """FastAPI dependency — yields a DB session."""
     db = SessionLocal()
     try:
         yield db
@@ -22,6 +27,8 @@ def get_db():
         db.close()
 
 
-def create_tables():
-    """Create all tables. Called on app startup."""
+def init_db():
+    """Create all tables. Call on startup."""
+    # Import models so they register with Base
+    from app.models import backtest, strategy  # noqa: F401
     Base.metadata.create_all(bind=engine)

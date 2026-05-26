@@ -53,40 +53,35 @@ export default function Compare() {
     }
   };
 
-  // Find the best strategy
   const bestStrategy =
     results.length > 0
       ? results.reduce((best, curr) =>
-          curr.sharpe > best.sharpe ? curr : best
+          (curr.sharpe_ratio ?? 0) > (best.sharpe_ratio ?? 0) ? curr : best
         )
       : null;
 
-  // Build combined equity curve
   const buildCombinedEquity = () => {
     if (results.length === 0) return [];
-    // Use the first result's dates as base
     const baseCurve = results[0].equity_curve;
     return baseCurve.map((point, i) => {
       const entry: Record<string, number | string> = { date: point.date };
       results.forEach((r) => {
         if (r.equity_curve[i]) {
-          entry[r.strategy_name] = r.equity_curve[i].equity;
+          entry[r.strategy_id] = r.equity_curve[i].equity;
         }
       });
       return entry;
     });
   };
 
-  // Build monthly comparison
   const buildMonthlyComparison = () => {
     if (results.length === 0) return [];
-    // Group by year-month
     const monthMap = new Map<string, Record<string, number | string>>();
     results.forEach((r) => {
-      r.monthly_returns.forEach((m) => {
+      (r.monthly_returns ?? []).forEach((m: any) => {
         const key = `${m.year}-${String(m.month).padStart(2, "0")}`;
         if (!monthMap.has(key)) monthMap.set(key, { label: key });
-        monthMap.get(key)![r.strategy_name] = m.return;
+        monthMap.get(key)![r.strategy_id] = m.return;
       });
     });
     return Array.from(monthMap.values()).sort((a, b) =>
@@ -97,12 +92,11 @@ export default function Compare() {
   const combinedEquity = buildCombinedEquity();
   const monthlyComparison = buildMonthlyComparison();
 
-  // Comparison table
   const compColumns: ColumnsType<BacktestResult> = [
     {
       title: "策略",
-      dataIndex: "strategy_name",
-      key: "name",
+      dataIndex: "strategy_id",
+      key: "strategy_id",
       render: (v: string) => <Text strong>{v}</Text>,
     },
     {
@@ -110,43 +104,43 @@ export default function Compare() {
       dataIndex: "annualized_return",
       key: "ar",
       render: (v: number) => (
-        <Text style={{ color: v >= 0 ? "#3f8600" : "#cf1322" }}>
-          {v.toFixed(2)}%
+        <Text style={{ color: (v ?? 0) >= 0 ? "#3f8600" : "#cf1322" }}>
+          {(v ?? 0).toFixed(2)}%
         </Text>
       ),
     },
     {
       title: "夏普比",
-      dataIndex: "sharpe",
-      key: "sharpe",
-      render: (v: number) => v.toFixed(2),
+      dataIndex: "sharpe_ratio",
+      key: "sharpe_ratio",
+      render: (v: number) => (v ?? 0).toFixed(2),
     },
     {
       title: "最大回撤",
       dataIndex: "max_drawdown",
       key: "mdd",
       render: (v: number) => (
-        <Text style={{ color: "#cf1322" }}>{v.toFixed(2)}%</Text>
+        <Text style={{ color: "#cf1322" }}>{(v ?? 0).toFixed(2)}%</Text>
       ),
     },
     {
       title: "胜率",
       dataIndex: "win_rate",
       key: "wr",
-      render: (v: number) => `${v.toFixed(1)}%`,
+      render: (v: number) => `${(v ?? 0).toFixed(1)}%`,
     },
     {
       title: "交易次数",
-      dataIndex: "num_trades",
-      key: "nt",
+      dataIndex: "total_trades",
+      key: "tt",
     },
     {
       title: "总收益",
       dataIndex: "total_return",
       key: "tr",
       render: (v: number) => (
-        <Text style={{ color: v >= 0 ? "#3f8600" : "#cf1322" }}>
-          {v.toFixed(2)}%
+        <Text style={{ color: (v ?? 0) >= 0 ? "#3f8600" : "#cf1322" }}>
+          {(v ?? 0).toFixed(2)}%
         </Text>
       ),
     },
@@ -159,7 +153,6 @@ export default function Compare() {
         选择 2–4 个策略进行多维度对比分析
       </Paragraph>
 
-      {/* Selector */}
       <Card style={{ marginBottom: 24 }}>
         <Row gutter={16} align="middle">
           <Col flex="auto">
@@ -171,8 +164,8 @@ export default function Compare() {
               style={{ width: "100%" }}
               maxCount={4}
               options={allBacktests.map((b) => ({
-                value: b.id,
-                label: `${b.strategy_name} (${b.id})`,
+                value: b.strategy_id,
+                label: b.strategy_id,
               }))}
             />
           </Col>
@@ -198,7 +191,6 @@ export default function Compare() {
 
       {results.length > 0 && (
         <>
-          {/* Best Strategy Summary */}
           {bestStrategy && (
             <Card
               style={{
@@ -211,31 +203,29 @@ export default function Compare() {
                 <TrophyOutlined style={{ fontSize: 24, color: "#faad14" }} />
                 <div>
                   <Text strong style={{ fontSize: 16 }}>
-                    最优策略：{bestStrategy.strategy_name}
+                    最优策略：{bestStrategy.strategy_id}
                   </Text>
                   <br />
                   <Text type="secondary">
-                    夏普比 {bestStrategy.sharpe.toFixed(2)} · 年化{" "}
-                    {bestStrategy.annualized_return.toFixed(2)}% · 回撤{" "}
-                    {bestStrategy.max_drawdown.toFixed(2)}%
+                    夏普比 {(bestStrategy.sharpe_ratio ?? 0).toFixed(2)} · 年化{" "}
+                    {(bestStrategy.annualized_return ?? 0).toFixed(2)}% · 回撤{" "}
+                    {(bestStrategy.max_drawdown ?? 0).toFixed(2)}%
                   </Text>
                 </div>
               </Space>
             </Card>
           )}
 
-          {/* Core Metrics Comparison */}
           <Card title="核心指标对比" style={{ marginBottom: 24 }}>
             <Table
               columns={compColumns}
               dataSource={results}
-              rowKey="id"
+              rowKey="strategy_id"
               pagination={false}
               size="middle"
             />
           </Card>
 
-          {/* Equity Curves */}
           <Card title="净值曲线叠加" style={{ marginBottom: 24 }}>
             <ResponsiveContainer width="100%" height={400}>
               <LineChart data={combinedEquity}>
@@ -258,9 +248,9 @@ export default function Compare() {
                 <Legend />
                 {results.map((r, i) => (
                   <Line
-                    key={r.id}
+                    key={r.strategy_id}
                     type="monotone"
-                    dataKey={r.strategy_name}
+                    dataKey={r.strategy_id}
                     stroke={COLORS[i % COLORS.length]}
                     strokeWidth={2}
                     dot={false}
@@ -270,7 +260,6 @@ export default function Compare() {
             </ResponsiveContainer>
           </Card>
 
-          {/* Monthly Returns Comparison */}
           <Card title="月度收益对比（%）" style={{ marginBottom: 24 }}>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={monthlyComparison}>
@@ -292,8 +281,8 @@ export default function Compare() {
                 <Legend />
                 {results.map((r, i) => (
                   <Bar
-                    key={r.id}
-                    dataKey={r.strategy_name}
+                    key={r.strategy_id}
+                    dataKey={r.strategy_id}
                     fill={COLORS[i % COLORS.length]}
                     radius={[2, 2, 0, 0]}
                   />
@@ -302,23 +291,22 @@ export default function Compare() {
             </ResponsiveContainer>
           </Card>
 
-          {/* Side-by-side detail cards */}
           <Title level={4} style={{ marginBottom: 16 }}>
             策略详情
           </Title>
           <Row gutter={[16, 16]}>
             {results.map((r, i) => (
-              <Col xs={24} sm={12} key={r.id}>
+              <Col xs={24} sm={12} key={r.strategy_id}>
                 <Card
                   size="small"
                   style={{ borderLeft: `4px solid ${COLORS[i % COLORS.length]}` }}
                 >
-                  <Title level={5}>{r.strategy_name}</Title>
+                  <Title level={5}>{r.strategy_id}</Title>
                   <Row gutter={[8, 8]}>
                     <Col span={8}>
                       <Statistic
                         title="年化收益"
-                        value={r.annualized_return}
+                        value={r.annualized_return ?? 0}
                         suffix="%"
                         valueStyle={{ fontSize: 14 }}
                       />
@@ -326,14 +314,14 @@ export default function Compare() {
                     <Col span={8}>
                       <Statistic
                         title="夏普比"
-                        value={r.sharpe}
+                        value={r.sharpe_ratio ?? 0}
                         valueStyle={{ fontSize: 14 }}
                       />
                     </Col>
                     <Col span={8}>
                       <Statistic
                         title="最大回撤"
-                        value={r.max_drawdown}
+                        value={r.max_drawdown ?? 0}
                         suffix="%"
                         valueStyle={{ fontSize: 14, color: "#cf1322" }}
                       />
@@ -341,7 +329,7 @@ export default function Compare() {
                     <Col span={8}>
                       <Statistic
                         title="胜率"
-                        value={r.win_rate}
+                        value={r.win_rate ?? 0}
                         suffix="%"
                         valueStyle={{ fontSize: 14 }}
                       />
@@ -349,23 +337,19 @@ export default function Compare() {
                     <Col span={8}>
                       <Statistic
                         title="交易次数"
-                        value={r.num_trades}
+                        value={r.total_trades}
                         valueStyle={{ fontSize: 14 }}
                       />
                     </Col>
                     <Col span={8}>
                       <Statistic
                         title="总收益"
-                        value={r.total_return}
+                        value={r.total_return ?? 0}
                         suffix="%"
                         valueStyle={{ fontSize: 14 }}
                       />
                     </Col>
                   </Row>
-                  <Divider style={{ margin: "8px 0" }} />
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    参数：{Object.entries(r.strategy_params).map(([k, v]) => `${k}=${String(v)}`).join(", ")}
-                  </Text>
                 </Card>
               </Col>
             ))}

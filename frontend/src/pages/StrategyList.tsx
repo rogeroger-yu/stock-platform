@@ -68,7 +68,7 @@ export default function StrategyList() {
   }, [fetchData]);
 
   const filteredStrategies = typeFilter
-    ? strategies.filter((s) => s.type === typeFilter)
+    ? strategies.filter((s) => s.strategy_type === typeFilter)
     : strategies;
 
   const handleRunBacktest = (strategy: Strategy) => {
@@ -89,8 +89,7 @@ export default function StrategyList() {
 
       const { start_date, end_date, symbols, ...restParams } = values;
       const params: BacktestParams = {
-        strategy: selectedStrategy.id,
-        params: restParams,
+        strategy_id: selectedStrategy.id,
         start_date: start_date ?? "2024-01-01",
         end_date: end_date ?? "2025-12-31",
         symbols: symbols
@@ -119,8 +118,8 @@ export default function StrategyList() {
     },
     {
       title: "类型",
-      dataIndex: "type",
-      key: "type",
+      dataIndex: "strategy_type",
+      key: "strategy_type",
       render: (type: string) => (
         <Tag color={strategyTypeColors[type]}>
           {strategyTypeOptions.find((o) => o.value === type)?.label ?? type}
@@ -167,40 +166,35 @@ export default function StrategyList() {
 
   const backtestColumns: ColumnsType<BacktestResult> = [
     {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-      width: 100,
-    },
-    {
-      title: "策略",
-      dataIndex: "strategy_name",
-      key: "strategy_name",
+      title: "策略ID",
+      dataIndex: "strategy_id",
+      key: "strategy_id",
+      width: 150,
     },
     {
       title: "年化收益",
       dataIndex: "annualized_return",
       key: "annualized_return",
       render: (v: number) => (
-        <Text style={{ color: v >= 0 ? "#3f8600" : "#cf1322" }}>
-          {v.toFixed(2)}%
+        <Text style={{ color: (v ?? 0) >= 0 ? "#3f8600" : "#cf1322" }}>
+          {(v ?? 0).toFixed(2)}%
         </Text>
       ),
-      sorter: (a, b) => a.annualized_return - b.annualized_return,
+      sorter: (a, b) => (a.annualized_return ?? 0) - (b.annualized_return ?? 0),
     },
     {
       title: "夏普比",
-      dataIndex: "sharpe",
-      key: "sharpe",
-      render: (v: number) => v.toFixed(2),
-      sorter: (a, b) => a.sharpe - b.sharpe,
+      dataIndex: "sharpe_ratio",
+      key: "sharpe_ratio",
+      render: (v: number) => (v ?? 0).toFixed(2),
+      sorter: (a, b) => (a.sharpe_ratio ?? 0) - (b.sharpe_ratio ?? 0),
     },
     {
       title: "最大回撤",
       dataIndex: "max_drawdown",
       key: "max_drawdown",
       render: (v: number) => (
-        <Text style={{ color: "#cf1322" }}>{v.toFixed(2)}%</Text>
+        <Text style={{ color: "#cf1322" }}>{(v ?? 0).toFixed(2)}%</Text>
       ),
     },
     {
