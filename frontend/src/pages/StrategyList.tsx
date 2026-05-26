@@ -8,7 +8,6 @@ import {
   Modal,
   Form,
   Input,
-  DatePicker,
   Select,
   InputNumber,
   message,
@@ -27,7 +26,6 @@ import { api, type Strategy, type BacktestResult, type BacktestParams } from "..
 import type { ColumnsType } from "antd/es/table";
 
 const { Title, Text } = Typography;
-const { RangePicker } = DatePicker;
 
 const strategyTypeColors: Record<string, string> = {
   momentum: "blue",
