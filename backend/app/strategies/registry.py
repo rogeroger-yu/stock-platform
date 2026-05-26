@@ -27,6 +27,7 @@ def _load_registry():
     from app.strategies.kdj import KDJStrategy, KDJReversalStrategy
     from app.strategies.turtle import TurtleStrategy, TurtleSystem2Strategy
     from app.strategies.dual_ma import DualMAStrategy, TripleMAStrategy
+    from app.strategies.composite import CompositeStrategy, AdaptiveCompositeStrategy
 
     registry = {
         # ─── Original 3 families ───
@@ -47,6 +48,10 @@ def _load_registry():
         "turtle_system2": TurtleSystem2Strategy,
         "dual_ma": DualMAStrategy,
         "triple_ma": TripleMAStrategy,
+
+        # ─── Composite (our strategy) ───
+        "composite": CompositeStrategy,
+        "adaptive_composite": AdaptiveCompositeStrategy,
     }
 
     _STRATEGY_CLASSES.update(registry)

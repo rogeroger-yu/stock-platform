@@ -7,6 +7,7 @@ from app.api.health import router as health_router
 from app.api.strategies import router as strategies_router
 from app.api.strategy_types import router as strategy_types_router
 from app.api.backtests import router as backtests_router
+from app.api.simulation import router as simulation_router
 from app.paper_trade.api import router as paper_trade_router
 from app.db import init_db
 
@@ -25,6 +26,7 @@ app.include_router(health_router)
 app.include_router(strategy_types_router)
 app.include_router(strategies_router)
 app.include_router(backtests_router)
+app.include_router(simulation_router)
 app.include_router(paper_trade_router)
 
 
