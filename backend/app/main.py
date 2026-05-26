@@ -12,7 +12,7 @@ from app.paper_trade.api import router as paper_trade_router
 from app.api.data_mgmt import router as data_mgmt_router
 from app.db import init_db
 
-app = FastAPI(title="Stock Strategy Platform", version="0.2.0")
+app = FastAPI(title="Stock Strategy Platform", version="0.3.0")
 
 app.add_middleware(
     CORSMiddleware,

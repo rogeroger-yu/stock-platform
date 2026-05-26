@@ -87,7 +87,7 @@ export default function Layout() {
             股票策略研发平台
           </Text>
           <Text type="secondary" style={{ marginLeft: 12, fontSize: 13 }}>
-            v0.1.0
+            v0.3.0
           </Text>
         </Header>
         <Content
