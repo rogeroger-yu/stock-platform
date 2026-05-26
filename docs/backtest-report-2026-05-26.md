@@ -44,8 +44,16 @@
 - **趋势跟踪类** (momentum, turtle, MA): 高回撤，收益不突出
 - **KDJ类**: 中等表现
 
+## 参数优化后结果
+
+优化了 mean_reversion 和 kdj 的参数（3标的×36/81组合网格搜索）：
+- **mean_reversion**: bb_window=15, bb_std=2.5, rsi_period=10, min_holding=10 → 回撤从8.2%降至4.0%
+- **kdj**: n=5, oversold=15, overbought=70, min_holding=3 → 排名稳定第三
+
+优化后 Top3 不变：mean_reversion > adaptive_composite > kdj
+
 ## 下一步
-1. 用更多标的(30+)验证排名稳定性
-2. 优化 top3 策略参数
-3. 构建复合策略组合
-4. 设置每日模拟交易
+1. ✅ 优化 top3 策略参数 — 完成
+2. 构建复合策略组合
+3. 设置每日大盘模拟定时任务
+4. 异步批处理优化（支持50+标的全量回测）
