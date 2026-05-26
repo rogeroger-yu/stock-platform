@@ -219,6 +219,17 @@ export const api = {
     const { data } = await client.get("/paper/signal-history", { params: { limit } });
     return data;
   },
+
+  // Data Management
+  async getAvailableStocks() {
+    const { data } = await client.get("/data/stocks");
+    return data;
+  },
+
+  async getStockCoverage(symbol: string) {
+    const { data } = await client.get(`/data/stocks/${symbol}`);
+    return data;
+  },
 };
 
 export default client;

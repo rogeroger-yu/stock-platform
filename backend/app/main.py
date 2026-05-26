@@ -9,6 +9,7 @@ from app.api.strategy_types import router as strategy_types_router
 from app.api.backtests import router as backtests_router
 from app.api.simulation import router as simulation_router
 from app.paper_trade.api import router as paper_trade_router
+from app.api.data_mgmt import router as data_mgmt_router
 from app.db import init_db
 
 app = FastAPI(title="Stock Strategy Platform", version="0.2.0")
@@ -32,6 +33,7 @@ app.include_router(strategies_router)
 app.include_router(backtests_router)
 app.include_router(simulation_router)
 app.include_router(paper_trade_router)
+app.include_router(data_mgmt_router)
 
 
 @app.on_event("startup")
