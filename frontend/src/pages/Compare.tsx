@@ -23,6 +23,7 @@ import {
   Legend,
 } from "recharts";
 import { api, type BacktestResult } from "../api/client";
+import type { ColumnsType } from "antd/es/table";
 const { Title, Text, Paragraph } = Typography;
 
 const COLORS = ["#1677ff", "#3f8600", "#722ed1", "#cf1322", "#faad14", "#13c2c2"];

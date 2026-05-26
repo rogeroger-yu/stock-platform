@@ -372,7 +372,8 @@ async def list_backtests(
         {
             "id": r.id,
             "strategy_name": r.strategy_name,
-            "params": json.loads(r.params_json) if r.params_json else {},
+            "strategy_type": (json.loads(r.params_json) if r.params_json else {}).get("strategy_type", ""),
+            "params": {k: v for k, v in (json.loads(r.params_json) if r.params_json else {}).items() if k != "strategy_type"},
             "start_date": r.start_date,
             "end_date": r.end_date,
             "annual_return": r.annual_return,
@@ -394,7 +395,9 @@ async def get_backtest(backtest_id: int, db: Session = Depends(get_db)) -> dict:
     return {
         "id": r.id,
         "strategy_name": r.strategy_name,
-        "params": json.loads(r.params_json) if r.params_json else {},
+        "strategy_type": params.get("strategy_type", ""),
+        "params": {k: v for k, v in params.items() if k != "strategy_type"},
+        "symbols": params.get("symbols", []),
         "start_date": r.start_date,
         "end_date": r.end_date,
         "annual_return": r.annual_return,

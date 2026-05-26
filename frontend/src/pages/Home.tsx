@@ -126,9 +126,16 @@ export default function Home() {
                   actions={[
                     <Button
                       type="link"
+                      key="detail"
+                      onClick={() => navigate(`/strategies/${s.id}`)}
+                    >
+                      查看详情
+                    </Button>,
+                    <Button
+                      type="link"
                       key="run"
                       icon={<RocketOutlined />}
-                      onClick={() => navigate("/strategies")}
+                      onClick={() => navigate(`/strategies/${s.id}`)}
                     >
                       运行回测
                     </Button>,
