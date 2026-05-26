@@ -9,7 +9,6 @@ import {
   Descriptions,
   Tag,
   Spin,
-  Table,
   Button,
   Empty,
 } from "antd";
@@ -31,9 +30,7 @@ import {
   Cell,
 } from "recharts";
 import { api, type BacktestResult } from "../api/client";
-import type { ColumnsType } from "antd/es/table";
-
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 export default function BacktestDetail() {
   const { id } = useParams<{ id: string }>();

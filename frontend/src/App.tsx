@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import StrategyList from "./pages/StrategyList";
+import StrategyDetail from "./pages/StrategyDetail";
 import BacktestDetail from "./pages/BacktestDetail";
 import Compare from "./pages/Compare";
 
@@ -11,6 +12,7 @@ function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/strategies" element={<StrategyList />} />
+        <Route path="/strategies/:id" element={<StrategyDetail />} />
         <Route path="/backtest/:id" element={<BacktestDetail />} />
         <Route path="/compare" element={<Compare />} />
       </Route>

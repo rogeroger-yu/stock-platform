@@ -257,6 +257,14 @@ export default function StrategyList() {
       width: 280,
       render: (_, record) => (
         <Space>
+          <Tooltip title="查看详情">
+            <Button
+              size="small"
+              onClick={() => navigate(`/strategies/${record.id}`)}
+            >
+              详情
+            </Button>
+          </Tooltip>
           <Tooltip title="运行回测">
             <Button
               type="primary"
