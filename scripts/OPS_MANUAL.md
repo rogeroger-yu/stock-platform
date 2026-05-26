@@ -87,6 +87,39 @@ bash scripts/ops.sh daily:ops
 | `full:deploy` | 完整部署（后端 rsync + 重启 + 前端 push） |
 | `daily:ops` | 每日运维检查（状态+数据+策略+模拟交易） |
 
+## 核心工作流
+
+### 1. 策略研究循环（每日）
+
+```bash
+# 1. 下载/更新数据
+bash scripts/ops.sh data:download
+
+# 2. 批量回测所有策略
+bash scripts/ops.sh backtest:batch "000001,600519,000858,002594" 2020-01-01 2024-12-31 17
+
+# 3. 查看前端排名和对比
+# -> 访问 https://rogeroger-yu.github.io/stock-platform/
+
+# 4. 每日模拟检查
+bash scripts/ops.sh paper:daily
+```
+
+### 2. 策略复盘（每周）
+
+1. 在前端「批量排名」页面查看各策略表现
+2. 在「策略对比」页面叠加净值曲线
+3. 分析：哪些策略在什么市场环境下表现好？
+4. 调整参数或构建新的复合策略
+5. 跑 walk-forward 验证
+
+### 3. 复合策略迭代
+
+1. 在前端「策略详情」页面编辑策略参数
+2. 运行回测验证
+3. 与单策略对比
+4. 重复直到找到更优组合
+
 ## 典型工作流
 
 ### 1. 修改策略后部署
