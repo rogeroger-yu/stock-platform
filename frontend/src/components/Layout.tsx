@@ -6,6 +6,7 @@ import {
   SwapOutlined,
   DatabaseOutlined,
   ThunderboltOutlined,
+  WalletOutlined,
 } from "@ant-design/icons";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 
@@ -17,6 +18,7 @@ const navItems = [
   { key: "/strategies", icon: <LineChartOutlined />, label: "策略列表" },
   { key: "/batch", icon: <ThunderboltOutlined />, label: "批量排名" },
   { key: "/compare", icon: <SwapOutlined />, label: "策略对比" },
+  { key: "/paper", icon: <WalletOutlined />, label: "模拟交易" },
   { key: "/data", icon: <DatabaseOutlined />, label: "数据管理" },
 ];
 
