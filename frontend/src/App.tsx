@@ -6,6 +6,7 @@ import StrategyDetail from "./pages/StrategyDetail";
 import BacktestDetail from "./pages/BacktestDetail";
 import Compare from "./pages/Compare";
 import DataManagement from "./pages/DataManagement";
+import BatchRun from "./pages/BatchRun";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/strategies/:id" element={<StrategyDetail />} />
         <Route path="/backtest/:id" element={<BacktestDetail />} />
         <Route path="/compare" element={<Compare />} />
+        <Route path="/batch" element={<BatchRun />} />
         <Route path="/data" element={<DataManagement />} />
       </Route>
     </Routes>

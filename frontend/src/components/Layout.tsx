@@ -5,6 +5,7 @@ import {
   LineChartOutlined,
   SwapOutlined,
   DatabaseOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 
@@ -14,6 +15,7 @@ const { Text } = Typography;
 const navItems = [
   { key: "/", icon: <HomeOutlined />, label: "首页" },
   { key: "/strategies", icon: <LineChartOutlined />, label: "策略列表" },
+  { key: "/batch", icon: <ThunderboltOutlined />, label: "批量排名" },
   { key: "/compare", icon: <SwapOutlined />, label: "策略对比" },
   { key: "/data", icon: <DatabaseOutlined />, label: "数据管理" },
 ];
