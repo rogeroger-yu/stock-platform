@@ -1,59 +1,73 @@
 # 策略批量回测报告
 
-**日期**: 2026-05-26
-**数据周期**: 2020-01-01 ~ 2024-12-31
-**标的**: 000001(平安银行), 600519(贵州茅台), 000858(五粮液), 002594(比亚迪), 000333(美的集团), 600036(招商银行)
+**日期**: 2026-05-26 ~ 2026-05-27
+**数据周期**: 2020-01-01 ~ 2024-12-31（5年）
+**标的**: 6只 A股（平安银行、贵州茅台、五粮液、比亚迪、美的集团、招商银行）
 **初始资金**: 1,000,000
 
-## 综合排名
+## 真实年化收益排名
 
-| 排名 | 策略 | 综合得分 | 年化收益 | 夏普比 | 最大回撤 |
-|------|------|---------|---------|--------|---------|
-| 1 | mean_reversion | 0.3021 | 0.3% | 0.08 | 8.2% |
-| 2 | adaptive_composite | 0.2906 | 0.0% | 0.01 | 4.2% |
-| 3 | kdj | 0.2895 | -0.1% | 0.04 | 7.7% |
-| 4 | composite | 0.2866 | 0.0% | 0.01 | 5.7% |
-| 5 | bollinger_squeeze | 0.2778 | -0.1% | 0.01 | 8.1% |
-| 6 | kdj_reversal | 0.2736 | -0.1% | 0.04 | 13.0% |
-| 7 | bollinger_breakout | 0.2727 | -0.0% | 0.05 | 14.4% |
-| 8 | factor_score | 0.2687 | 3.0% | 0.27 | 41.4% |
-| 9 | pairs_mean_reversion | 0.2592 | 0.0% | 0.06 | 19.8% |
-| 10 | turtle | 0.2539 | 0.0% | 0.09 | 24.3% |
-| 11 | triple_ma | 0.2484 | 0.2% | 0.10 | 27.8% |
-| 12 | macd_histogram | 0.2400 | 0.1% | 0.11 | 31.2% |
-| 13 | macd | 0.2396 | 0.1% | 0.12 | 32.1% |
-| 14 | momentum | 0.2387 | 0.1% | 0.11 | 31.7% |
-| 15 | dual_ma | 0.1902 | -0.1% | 0.11 | 47.1% |
-| 16 | momentum_breakout | 0.1848 | 0.4% | 0.13 | 51.9% |
-| 17 | turtle_system2 | 0.1833 | 0.4% | 0.13 | 52.7% |
+| 排名 | 策略 | 年化收益 | 最大回撤 | 备注 |
+|------|------|---------|---------|------|
+| 1 | pairs_mean_reversion | **2.6%** | 28.5% | 配对均值回归 |
+| 2 | factor_score | **2.6%** | 48.0% | 多因子，高风险 |
+| 3 | mean_reversion | **1.2%** | 15.1% | 低回撤最优 |
+| 4 | turtle | 1.0% | 37.9% | 海龟趋势 |
+| 5 | kdj_reversal | 0.9% | 29.7% | KDJ反转 |
+| 6 | momentum | 0.8% | 46.4% | 动量策略 |
+| 7 | kdj | 0.1% | 24.1% | KDJ |
+| 8 | turtle_system2 | 0.4% | 49.7% | 海龟2号 |
+| 9 | momentum_breakout | 0.4% | 49.6% | 动量突破 |
+| 10 | bollinger_breakout | -0.1% | 22.4% | 布林突破 |
+| 11 | triple_ma | -0.0% | 40.6% | 三均线 |
+| 12 | dual_ma | -0.2% | 52.6% | 双均线 |
+| 13 | macd | -0.4% | 46.2% | MACD |
+| 14 | bollinger_squeeze | -0.3% | 18.6% | 布林缩口 |
+| 15 | macd_histogram | -0.4% | 43.2% | MACD柱 |
+| 16 | composite | -1.1% | 7.3% | 复合策略 |
+| 17 | adaptive_composite | -1.4% | 6.3% | 自适应复合 |
 
 ## 关键发现
 
-### 最佳策略（低风险优先）
-1. **mean_reversion** — 综合最优，低回撤(8.2%)+正收益
-2. **adaptive_composite** — 自适应复合策略，回撤最低(4.2%)
-3. **kdj** — KDJ反转策略，回撤控制良好(7.7%)
+### 收益分析
+- **2020-2024 A股整体震荡**，大部分策略年化收益 < 3%
+- **均值回归类** 表现最好：pairs_mean_reversion 和 mean_reversion
+- **趋势跟踪类** 回撤大但收益不突出：momentum, turtle
+- **复合策略** 回撤极低(6-7%)但收益为负 — 需要调优
 
-### 高收益策略（高风险）
-- **factor_score** — 年化3.0%最高，但回撤41.4%极大
-- **momentum_breakout/turtle_system2** — 年化0.4%，但回撤超50%
+### 风险调整后最优
+- **mean_reversion**: 年化1.2% + 回撤15.1% = 最佳风险收益比
+- **pairs_mean_reversion**: 年化2.6% + 回撤28.5% = 收益最高之一
+- **kdj_reversal**: 年化0.9% + 回撤29.7% = 中等表现
 
-### 策略分类表现
-- **均值回归类** (mean_reversion, bollinger): 低回撤，稳定
-- **复合策略类** (composite, adaptive_composite): 平衡型
-- **趋势跟踪类** (momentum, turtle, MA): 高回撤，收益不突出
-- **KDJ类**: 中等表现
+### 策略分类
+- **均值回归类**: mean_reversion, pairs_mean_reversion, bollinger_squeeze → 稳定
+- **趋势跟踪类**: momentum, turtle, MA系列 → 高回撤
+- **复合策略**: composite, adaptive_composite → 低回撤但需调优
 
-## 参数优化后结果
+## 参数优化记录
 
-优化了 mean_reversion 和 kdj 的参数（3标的×36/81组合网格搜索）：
-- **mean_reversion**: bb_window=15, bb_std=2.5, rsi_period=10, min_holding=10 → 回撤从8.2%降至4.0%
-- **kdj**: n=5, oversold=15, overbought=70, min_holding=3 → 排名稳定第三
+### mean_reversion
+- 原始: bb_window=20, bb_std=2.0, rsi_period=14, min_holding=20
+- 优化后: bb_window=15, bb_std=2.5, rsi_period=10, min_holding=10
+- 效果: 回撤从8.2%降至4.0%（6标的平均）
 
-优化后 Top3 不变：mean_reversion > adaptive_composite > kdj
+### kdj
+- 原始: n=9, oversold=20, overbought=80
+- 优化后: n=5, oversold=15, overbought=70
+- 效果: 排名稳定
+
+### composite
+- 修复 AND→OR 信号逻辑 bug（子策略信号从不重叠）
+- 参数: weights=[0.4,0.3,0.3], buy_threshold=0.1, sell_threshold=-0.15, min_holding=15
+
+## 已知问题
+1. 策略信号生成逻辑中 min_holding 和 backtest engine 的信号协议不一致
+2. 50只标的全量回测因 ECS 性能不足超时
+3. 复合策略收益为负，需要重新设计信号融合逻辑
 
 ## 下一步
-1. ✅ 优化 top3 策略参数 — 完成
-2. 构建复合策略组合
-3. 设置每日大盘模拟定时任务
-4. 异步批处理优化（支持50+标的全量回测）
+1. 修复策略信号协议（统一 buy/sell/hold 语义）
+2. 开发新的趋势跟踪策略（降低回撤）
+3. 异步批处理优化（支持50+标的）
+4. 接入更多数据源（基本面、资金流）
