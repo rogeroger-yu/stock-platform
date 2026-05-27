@@ -1,0 +1,72 @@
+[
+  {
+    "page": "Home",
+    "url": "http://47.97.26.218/",
+    "ok": true,
+    "hasContent": true,
+    "consoleErrors": 0,
+    "networkErrors": 0,
+    "apiCalls": 1,
+    "errors": []
+  },
+  {
+    "page": "StrategyList",
+    "url": "http://47.97.26.218/strategies",
+    "ok": true,
+    "hasContent": true,
+    "consoleErrors": 0,
+    "networkErrors": 0,
+    "apiCalls": 1,
+    "errors": []
+  },
+  {
+    "page": "StrategyDetail",
+    "url": "http://47.97.26.218/strategies/1",
+    "ok": true,
+    "hasContent": true,
+    "consoleErrors": 0,
+    "networkErrors": 0,
+    "apiCalls": 2,
+    "errors": []
+  },
+  {
+    "page": "BatchRun",
+    "url": "http://47.97.26.218/batch",
+    "ok": true,
+    "hasContent": true,
+    "consoleErrors": 0,
+    "networkErrors": 0,
+    "apiCalls": 0,
+    "errors": []
+  },
+  {
+    "page": "Compare",
+    "url": "http://47.97.26.218/compare",
+    "ok": true,
+    "hasContent": true,
+    "consoleErrors": 0,
+    "networkErrors": 0,
+    "apiCalls": 1,
+    "errors": []
+  },
+  {
+    "page": "PaperTrade",
+    "url": "http://47.97.26.218/paper",
+    "ok": true,
+    "hasContent": true,
+    "consoleErrors": 0,
+    "networkErrors": 0,
+    "apiCalls": 2,
+    "errors": []
+  },
+  {
+    "page": "DataManagement",
+    "url": "http://47.97.26.218/data",
+    "ok": true,
+    "hasContent": true,
+    "consoleErrors": 0,
+    "networkErrors": 0,
+    "apiCalls": 1,
+    "errors": []
+  }
+]

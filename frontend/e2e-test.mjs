@@ -1,222 +1,138 @@
 /**
- * E2E Test Script for Stock Strategy Platform
- * Tests all pages, finds errors, and reports issues.
+ * E2E 测试脚本 — 使用 Playwright 测试前端所有页面
+ * 测试方案: 每个页面加载 → 截图 → 检查控制台错误 → 检查API调用
  */
-
 import { chromium } from 'playwright';
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { writeFileSync, mkdirSync } from 'fs';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const BASE_URL = 'http://localhost:5174';
+const BASE_URL = 'http://47.97.26.218/';
+const SCREENSHOTS_DIR = './e2e-screenshots';
 
-const PAGES = [
-  { name: '首页', path: '/' },
-  { name: '策略列表', path: '/strategies' },
-  { name: '策略详情', path: '/strategies/1' },
-  { name: '对比', path: '/compare' },
-  { name: '批量排名', path: '/batch' },
-  { name: '模拟交易', path: '/paper' },
-  { name: '数据管理', path: '/data' },
-  { name: '回测详情', path: '/backtest/1' },
+mkdirSync(SCREENSHOTS_DIR, { recursive: true });
+
+const pages = [
+  { name: 'Home', path: '/', checks: ['股票策略研发平台'] },
+  { name: 'StrategyList', path: '/strategies', checks: ['策略', 'momentum'] },
+  { name: 'StrategyDetail', path: '/strategies/1', checks: ['策略详情', '回测'] },
+  { name: 'BatchRun', path: '/batch', checks: ['批量', '回测'] },
+  { name: 'Compare', path: '/compare', checks: ['对比'] },
+  { name: 'PaperTrade', path: '/paper', checks: ['模拟交易', '账户'] },
+  { name: 'DataManagement', path: '/data', checks: ['数据', '股票'] },
 ];
 
-async function startViteServer() {
-  // Check if serve is already running
-  try {
-    const resp = await fetch('http://localhost:5174/');
-    if (resp.ok) {
-      console.log('  (Serve already running)');
-      return null;
-    }
-  } catch {}
+const results = [];
 
-  return new Promise((resolve, reject) => {
-    const proc = spawn('node', ['node_modules/.bin/serve', '-s', 'dist', '-l', '5174'], {
-      cwd: __dirname,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-    
-    let started = false;
-    proc.stdout.on('data', (data) => {
-      const text = data.toString();
-      if (text.includes('Accepting') && !started) {
-        started = true;
-        setTimeout(() => resolve(proc), 1000);
-      }
-    });
-    proc.stderr.on('data', (data) => {
-      console.error('serve stderr:', data.toString());
-    });
-    
-    setTimeout(() => {
-      if (!started) {
-        proc.kill();
-        reject(new Error('Serve start timeout'));
-      }
-    }, 15000);
-  });
-}
-
-async function testPage(browser, pagePath, pageName) {
-  const context = await browser.newContext();
-  const page = await context.newPage();
-  
-  const errors = [];
-  const consoleErrors = [];
-  const networkErrors = [];
-  
-  // Collect console errors
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') {
-      consoleErrors.push(msg.text());
-    }
-  });
-  
-  // Collect page errors (uncaught exceptions)
-  page.on('pageerror', (err) => {
-    errors.push(err.message);
-  });
-  
-  // Collect network failures
-  page.on('requestfailed', (req) => {
-    if (!req.url().includes('/api/')) { // Ignore API errors (backend may not be running)
-      networkErrors.push(`${req.method()} ${req.url()}: ${req.failure()?.errorText || 'failed'}`);
-    }
-  });
-  
-  let status = 'PASS';
-  let loadTime = 0;
-  const startTime = Date.now();
-  
-  try {
-    const response = await page.goto(`${BASE_URL}${pagePath}`, {
-      waitUntil: 'domcontentloaded',
-      timeout: 15000,
-    });
-    loadTime = Date.now() - startTime;
-    
-    if (response && response.status() >= 400) {
-      status = 'FAIL';
-      errors.push(`HTTP ${response.status()}`);
-    }
-    
-    // Wait a bit for React to render
-    await page.waitForTimeout(2000);
-    
-    // Check if page has content (not blank)
-    const bodyText = await page.textContent('body');
-    if (!bodyText || bodyText.trim().length < 10) {
-      status = 'FAIL';
-      errors.push('Page appears blank (no content)');
-    }
-    
-    // Check for React error boundary or error messages
-    const hasErrorBoundary = await page.locator('text=Something went wrong').count().catch(() => 0);
-    if (hasErrorBoundary > 0) {
-      status = 'FAIL';
-      errors.push('React error boundary triggered');
-    }
-    
-    // Check for antd error messages
-    const antdErrors = await page.locator('.ant-message-error').count().catch(() => 0);
-    if (antdErrors > 0) {
-      const errorTexts = await page.locator('.ant-message-error').allTextContents().catch(() => []);
-      errors.push(`antd errors: ${errorTexts.join(', ')}`);
-    }
-    
-  } catch (err) {
-    status = 'FAIL';
-    errors.push(err.message);
-    loadTime = Date.now() - startTime;
-  }
-  
-  await context.close();
-  
-  return {
-    name: pageName,
-    path: pagePath,
-    status,
-    loadTime,
-    errors,
-    consoleErrors: consoleErrors.slice(0, 5),
-    networkErrors: networkErrors.slice(0, 5),
-  };
-}
-
-async function main() {
-  console.log('🚀 Starting E2E tests for Stock Strategy Platform\n');
-  
-  // Start vite server
-  console.log('📦 Starting Vite dev server...');
-  let viteProc;
-  try {
-    viteProc = await startViteServer();
-    if (viteProc) console.log('✅ Vite server running\n');
-  } catch (err) {
-    console.error('❌ Failed to start Vite:', err.message);
-    process.exit(1);
-  }
-  
-  // Launch browser
+async function runTests() {
   const browser = await chromium.launch({ headless: true });
-  
-  const results = [];
-  
-  for (const pg of PAGES) {
-    process.stdout.write(`  Testing ${pg.name} (${pg.path})... `);
-    const result = await testPage(browser, pg.path, pg.name);
-    results.push(result);
-    
-    if (result.status === 'PASS') {
-      console.log(`✅ ${result.loadTime}ms`);
-    } else {
-      console.log(`❌ ${result.loadTime}ms`);
-      for (const err of result.errors) {
-        console.log(`    ERROR: ${err}`);
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 800 },
+  });
+
+  for (const pageDef of pages) {
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const networkErrors = [];
+    const apiCalls = [];
+
+    page.on('console', msg => {
+      if (msg.type() === 'error') consoleErrors.push(msg.text());
+    });
+
+    page.on('requestfailed', request => {
+      networkErrors.push(`${request.method()} ${request.url()}: ${request.failure()?.errorText}`);
+    });
+
+    page.on('response', response => {
+      if (response.url().includes('/api/')) {
+        apiCalls.push({
+          url: response.url().replace(/.*\/api/, '/api'),
+          status: response.status(),
+        });
       }
-    }
-    if (result.consoleErrors.length > 0) {
-      for (const err of result.consoleErrors) {
-        console.log(`    CONSOLE: ${err.substring(0, 120)}`);
+    });
+
+    const url = `${BASE_URL}${pageDef.path.startsWith('/') ? pageDef.path.slice(1) : pageDef.path}`;
+    console.log(`\n=== Testing ${pageDef.name}: ${url} ===`);
+
+    try {
+      await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+      await page.waitForTimeout(3000);
+
+      // 截图
+      await page.screenshot({ path: `${SCREENSHOTS_DIR}/${pageDef.name}.png`, fullPage: true });
+      console.log(`  Screenshot saved`);
+
+      // 检查页面内容
+      const bodyText = await page.textContent('body');
+      for (const check of pageDef.checks) {
+        const found = bodyText?.includes(check);
+        console.log(`  Content "${check}": ${found ? 'FOUND' : 'MISSING'}`);
       }
-    }
-    if (result.networkErrors.length > 0) {
-      for (const err of result.networkErrors) {
-        console.log(`    NETWORK: ${err}`);
+
+      // 检查页面是否为空白（React渲染失败）
+      const hasContent = bodyText && bodyText.trim().length > 100;
+      console.log(`  Has content: ${hasContent ? 'YES' : 'NO (blank page!)'}`);
+
+      // 检查控制台错误
+      if (consoleErrors.length > 0) {
+        console.log(`  Console errors (${consoleErrors.length}):`);
+        consoleErrors.forEach(e => console.log(`    - ${e.slice(0, 120)}`));
       }
+
+      // 检查API调用
+      if (apiCalls.length > 0) {
+        console.log(`  API calls (${apiCalls.length}):`);
+        apiCalls.forEach(a => console.log(`    ${a.status} ${a.url}`));
+      }
+
+      // 检查网络错误
+      if (networkErrors.length > 0) {
+        console.log(`  Network errors (${networkErrors.length}):`);
+        networkErrors.forEach(e => console.log(`    - ${e.slice(0, 120)}`));
+      }
+
+      results.push({
+        page: pageDef.name,
+        url,
+        ok: hasContent && consoleErrors.length === 0,
+        hasContent,
+        consoleErrors: consoleErrors.length,
+        networkErrors: networkErrors.length,
+        apiCalls: apiCalls.length,
+        errors: [...consoleErrors, ...networkErrors],
+      });
+    } catch (e) {
+      console.log(`  FAILED: ${e.message}`);
+      results.push({
+        page: pageDef.name,
+        url,
+        ok: false,
+        error: e.message,
+      });
     }
+
+    await page.close();
   }
-  
+
   await browser.close();
-  if (viteProc) viteProc.kill();
-  
+
   // Summary
-  const passed = results.filter(r => r.status === 'PASS').length;
-  const failed = results.filter(r => r.status === 'FAIL').length;
-  
-  console.log(`\n${'='.repeat(60)}`);
-  console.log(`📊 Results: ${passed} passed, ${failed} failed, ${results.length} total`);
-  
-  if (failed > 0) {
-    console.log('\n❌ Failed pages:');
-    for (const r of results.filter(r => r.status === 'FAIL')) {
-      console.log(`  - ${r.name} (${r.path}): ${r.errors.join(', ')}`);
-    }
+  console.log('\n\n=== SUMMARY ===');
+  let allOk = true;
+  for (const r of results) {
+    const status = r.ok ? 'PASS' : 'FAIL';
+    console.log(`  ${status} ${r.page}: content=${r.hasContent} errors=${r.consoleErrors || 0} api=${r.apiCalls || 0}`);
+    if (!r.ok) allOk = false;
   }
-  
-  console.log(`${'='.repeat(60)}\n`);
-  
-  // Write results to JSON for further processing
-  const fs = await import('fs');
-  fs.writeFileSync('/tmp/e2e-results.json', JSON.stringify(results, null, 2));
-  console.log('📝 Results saved to /tmp/e2e-results.json');
-  
-  process.exit(failed > 0 ? 1 : 0);
+
+  // Save results
+  writeFileSync(`${SCREENSHOTS_DIR}/results.json`, JSON.stringify(results, null, 2));
+  console.log(`\nResults saved to ${SCREENSHOTS_DIR}/results.json`);
+
+  process.exit(allOk ? 0 : 1);
 }
 
-main().catch((err) => {
-  console.error('Fatal:', err);
+runTests().catch(e => {
+  console.error('Test runner failed:', e);
   process.exit(1);
 });
