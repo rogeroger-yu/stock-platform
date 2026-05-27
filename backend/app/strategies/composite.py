@@ -103,12 +103,12 @@ class CompositeStrategy(StrategyBase):
         for sig, w in zip(all_signals, norm_weights):
             composite += sig * w
 
-        # Agreement count
+        # Agreement count — any buy signal counts as agreement
         agreement = pd.Series(0, index=data.index)
         for i in range(len(data)):
             buy_votes = sum(1 for sig in all_signals if sig.iloc[i] == 1)
             sell_votes = sum(1 for sig in all_signals if sig.iloc[i] == -1)
-            agreement.iloc[i] = max(buy_votes, sell_votes)
+            agreement.iloc[i] = max(buy_votes, sell_votes, 1)  # min 1 so any weighted signal works
 
         # Generate final signals
         p = self._params
@@ -212,10 +212,10 @@ class AdaptiveCompositeStrategy(StrategyBase):
             # Weighted signal
             composite = sum(float(all_signals[j].iloc[i]) * weights[j] for j in range(n_strats))
 
-            # Agreement
+            # Agreement — any buy signal counts
             buy_votes = sum(1 for sig in all_signals if sig.iloc[i] == 1)
             sell_votes = sum(1 for sig in all_signals if sig.iloc[i] == -1)
-            agreement = max(buy_votes, sell_votes)
+            agreement = max(buy_votes, sell_votes, 1)  # min 1 so any weighted signal works
 
             if not in_position:
                 if composite > p["buy_threshold"] and agreement >= p["min_agreement"]:
